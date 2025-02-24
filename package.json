@@ -9,9 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.751.0",
+    "@aws-sdk/client-s3": "^3.750.0",
+    "@aws-sdk/s3-request-presigner": "^3.750.0",
+    "axios": "^1.7.9",
+    "next": "15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.1.7"
+    "react-icons": "^5.5.0",
+    "react-super-responsive-table": "^6.0.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "postcss": "^8",
