@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request) {
   const {
+    id,
     StudentName,
     Story,
     audioFile,
@@ -32,11 +33,12 @@ export async function POST(request) {
   const params = {
     TableName: process.env.NEXT_PUBLIC_STUDENT_TABLE,
     Item: {
+      id: { S: id },
       StudentName: { S: StudentName },
       Story: { S: Story },
       audioFile: { S: audioFile },
       apiCallTime: { S: apiCallTime },
-      responseTime: { N: (responseTime ?? 0).toString() },
+      responseTime: { N: (responseTime).toString() },
       reportURL: { S: reportURL },
     },
   };

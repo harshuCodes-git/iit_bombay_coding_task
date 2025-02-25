@@ -42,7 +42,7 @@ export async function POST(req) {
       Key: fileName,
     });
 
-    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 }); // 1 hour
+    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 604800 }); // 1 week
 
     console.log("✅ Pre-Signed URL:", signedUrl);
 

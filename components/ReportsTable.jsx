@@ -5,9 +5,10 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Table, Thead, Tbody, Tr, Th, Td } from "react-super-responsive-table";
 import "react-super-responsive-table/dist/SuperResponsiveTableStyle.css"
+import { useUUID } from "@/app/context/UUIDContext";
 
 export default function ReportsTable() {
-  const [reports, seTreports] = useState([]);
+  const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -15,7 +16,7 @@ export default function ReportsTable() {
     const fetchReports = async () => {
       try {
         const res = await axios.get("/api/reports/get");
-        seTreports(res.data);
+        setReports(res.data);
       } catch (error) {
         console.error("Error fetching reports:", error);
       } finally {
@@ -31,6 +32,7 @@ export default function ReportsTable() {
   };
 
   if (loading) return <p>Loading reports...</p>;
+
 
   return (
     <div className="overflow-x-auto mt-6">

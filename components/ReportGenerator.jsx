@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
+import { useUUID } from "@/app/context/UUIDContext";
 
 export default function ReportGenerator() {
   const [file, setFile] = useState(null);
@@ -12,6 +13,7 @@ export default function ReportGenerator() {
   const [storyName, setStoryName] = useState("");
   const [startTime, setStartTime] = useState(null);
   const [timeTaken, setTimeTaken] = useState(null);
+  const {uuid}=useUUID();
 
   // Select audio file
   const handleFileChange = (e) => {
@@ -71,6 +73,7 @@ export default function ReportGenerator() {
       // Ensure callTime is not null before using toISOString()
       await axios.post("/api/studentlog/save", {
         ...response.data,
+        id: uuid,
         StudentName: userName,
         Story: storyName,
         audioFile: fileUrl,
