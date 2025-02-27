@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Table, Thead, Tbody, Tr, Th, Td } from "react-super-responsive-table";
@@ -12,10 +12,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { useUUID } from "@/app/context/UUIDContext";
+import { Play, Pause } from "lucide-react";
+import { AudioPlayer } from "@/components/AudioPlayComponent";
+import Navbar from "@/components/Navbar";
+import ReadingReport from "@/components/ReadingReport";
+import ReportFilter from "@/components/ReportFilter";
 
-const HomeTable = () => {
+const Page = () => {
   const [reports, seTreports] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -150,6 +155,8 @@ const HomeTable = () => {
       );
     });
   };
+
+  
   useEffect(() => {
     const fetchReports = async () => {
       try {
@@ -163,37 +170,39 @@ const HomeTable = () => {
     };
     fetchReports();
   }, []);
+
+
   const clickOnURL = (id) => {
     router.push(`/report/${id}`);
   };
 
   // checking audio file is working or not
 
-const generateReport = async (reportfileUrl) => {
-  if (!reportfileUrl) {
-    alert("No uploaded file URL found!");
-    return;
-  }
+  const generateReport = async (reportfileUrl) => {
+    if (!reportfileUrl) {
+      alert("No uploaded file URL found!");
+      return;
+    }
 
-  setViewLoading(true);
-  try {
-    const response = await axios.post("/api/generate-report", {
-      s3_url: reportfileUrl,
-    });
-    setSolution(response.data);
-    alert("Report generated successfully!");
+    setViewLoading(true);
+    try {
+      const response = await axios.post("/api/generate-report", {
+        s3_url: reportfileUrl,
+      });
+      setSolution(response.data);
+      alert("Report generated successfully!");
 
-    // Scroll to the section with id "generated-report"
-    document
-      .getElementById("generated-report")
-      .scrollIntoView({ behavior: "smooth" });
-  } catch (error) {
-    console.error("Report generation failed:", error);
-    alert("Report generation failed!");
-  } finally {
-    setViewLoading(false);
-  }
-};
+      // Scroll to the section with id "generated-report"
+      document
+        .getElementById("generated-report")
+        .scrollIntoView({ behavior: "smooth" });
+    } catch (error) {
+      console.error("Report generation failed:", error);
+      alert("Report generation failed!");
+    } finally {
+      setViewLoading(false);
+    }
+  };
 
   const renderAudioOrPlaceholder = (audioFile) => {
     if (!audioFile) {
@@ -209,65 +218,41 @@ const generateReport = async (reportfileUrl) => {
     );
   };
 
+  const formatDateTime = (isoString) => {
+    const date = new Date(isoString);
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are zero-based
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+
+    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+  };
+
+  const addTime = (
+    isoString,
+    timeToAdd = { hours: 0, minutes: 0, seconds: 0 }
+  ) => {
+    const date = new Date(isoString);
+
+    date.setHours(date.getHours() + (timeToAdd.hours || 0));
+    date.setMinutes(date.getMinutes() + (timeToAdd.minutes || 0));
+    date.setSeconds(date.getSeconds() + (timeToAdd.seconds || 0));
+
+    return date.toISOString();
+  };
+
+
+
+
+
   return (
     <>
-      {/* Uploading data  */}
-      <div className="p-4">
-        <h1 className="text-2xl font-bold">Speech Assessment Report</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger>
-            <Button
-              onClick={() => {
-                setOpen(true);
-              }}
-            >
-              Open
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upload the Details</DialogTitle>
-              <DialogDescription>
-                {/* User Inputs */}
-                <div className="mt-4">
-                  <input
-                    type="text"
-                    placeholder="Your Name"
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    className="border p-2 rounded mb-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Story Name"
-                    value={storyName}
-                    onChange={(e) => setStoryName(e.target.value)}
-                    className="border p-2 rounded mb-2 w-full"
-                  />
-                </div>
+      <Navbar />
 
-                {/* File Upload Section */}
-                <div className="mt-4">
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={handleFileChange}
-                  />
-                  <button
-                    onClick={uploadToS3}
-                    disabled={loading}
-                    className="bg-blue-500 text-white px-4 py-2 rounded ml-2 disabled:opacity-50"
-                  >
-                    {loading ? "Uploading..." : "Upload Audio"}
-                  </button>
-                </div>
-              </DialogDescription>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="min-h-screen bg-gray-50 p-4">
+      <div className="min-h-screen bg-gray-50 p-4 pt-28">
         <div className="max-w-7xl mx-auto p-4">
           <header className="flex justify-between items-center mb-8">
             <div className="flex items-center gap-4">
@@ -277,18 +262,19 @@ const generateReport = async (reportfileUrl) => {
             <nav className="flex gap-8">
               <a
                 href="#recordings"
-                className="text-lg  underline font-medium hover:text-blue-600"
+                className="text-lg font-medium hover:text-blue-600"
               >
                 Recordings
               </a>
               <a
                 href="#reports"
-                className="text-lg font-medium hover:text-blue-600"
+                className="text-lg font-medium underline hover:text-blue-600"
               >
                 Reports
               </a>
             </nav>
           </header>
+          <ReportFilter  />
 
           <div className="overflow-x-auto">
             <Table className="min-w-full  bg-white rounded-xl shadow-lg overflow-hidden">
@@ -304,6 +290,12 @@ const generateReport = async (reportfileUrl) => {
                     Audio File
                   </Th>
                   <Th className="py-4 px-6 text-center border border-gray-800">
+                    API call time
+                  </Th>
+                  <Th className="py-4 px-6 text-center border border-gray-800">
+                    API response Time
+                  </Th>
+                  <Th className="py-4 px-6 text-center border border-gray-800">
                     Report
                   </Th>
                 </Tr>
@@ -314,44 +306,44 @@ const generateReport = async (reportfileUrl) => {
                     key={index}
                     className="border border-gray-600 hover:bg-gray-100 cursor-pointer"
                   >
-                    <Td className="py-3 px-6 text-left border border-gray-600">
+                    <Td className="py-3 px-6 text-center border border-gray-600">
                       {report.StudentName}
                     </Td>
-                    <Td className="py-3 px-6 text-left border border-gray-600 ">
+                    <Td className="py-3 px-6 text-center border border-gray-600 ">
                       {report.Story}
                     </Td>
-                    <Td className="py-3 px-4 text-left border border-gray-600">
-                      {renderAudioOrPlaceholder(report.audioFile)}
-                      <div>
+                    <Td className="py-3 px-4 text-center border border-gray-600">
+                      <AudioPlayer audioFile={report.audioFile} />
+                      {/* <div>
                         <Button onClick={() => uploadToStudentTables()}>
                           Upload
                         </Button>
-                      </div>
+                      </div> */}
                     </Td>
 
-                    <Td className="py-3 px-6 text-left">
+                    <Td className="py-3 px-6 text-center border border-gray-600 ">
+                      {formatDateTime(report.apiCallTime)}
+                    </Td>
+                    <Td className="py-2 px-4 text-center border border-gray-600 ">
+                      {report.responseTime}
+                    </Td>
+
+                    <Td className="py-3 px-6 text-center">
                       {report.reportURL && (
                         <div className="mt-4">
-                          <button
-                            onClick={() =>
-                              generateReportSASAPI(report.reportURL)
-                            }
-                            disabled={loading}
-                            className="bg-green-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50"
-                          >
-                            {loading
-                              ? "Generating Report..."
-                              : "Generate Report"}
-                          </button>
-
-                          <Button
+                          <p
                             onClick={() => generateReport(report.reportURL)}
                             // disabled={viewloading}
-                            className="bg-blue-500 text-white px-4 py-2 rounded mt-4 ml-4 disabled:opacity-50"
+                            className=" text-black
+                            hover:underline px-4 py-2 rounded mt-4 ml-4 disabled:opacity-50"
                           >
-                            {" "}
-                            view report
-                          </Button>
+                            View report
+                          </p>
+                          {formatDateTime(
+                            addTime(report.apiCallTime, {
+                              seconds: report.responseTime,
+                            })
+                          )}
                         </div>
                       )}
                     </Td>
@@ -360,41 +352,14 @@ const generateReport = async (reportfileUrl) => {
               </Tbody>
             </Table>
           </div>
-          <div id="generated-report" className="mt-8">
-            {solution && (
-              <div>
-                <h2>Reading Report</h2>
-                <p>
-                  <strong>Decoded Text:</strong> {solution.decoded_text}
-                </p>
-                <p>
-                  <strong>Words Correct Per Minute (WCPM):</strong>{" "}
-                  {solution.wcpm}
-                </p>
-                <p>
-                  <strong>Pronunciation Score:</strong> {solution.pron_score}
-                </p>
-                <p>
-                  <strong>Speech Rate:</strong> {solution.speech_rate}
-                </p>
-                <p>
-                  <strong>Correct Words:</strong> {solution.no_corr}
-                </p>
-                <p>
-                  <strong>Miscues:</strong> {solution.no_miscue}
-                </p>
-                <p>
-                  <strong>Percent Attempted:</strong> {solution.percent_attempt}
-                  %
-                </p>
-                {renderDecodedText(solution.decoded_text, solution.word_scores)}
-              </div>
-            )}
-          </div>
+          <ReadingReport
+            solution={solution}
+            renderDecodedText={renderDecodedText}
+          />
         </div>
       </div>
     </>
   );
 };
 
-export default HomeTable;
+export default Page;

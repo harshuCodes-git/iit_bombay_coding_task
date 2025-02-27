@@ -1,3 +1,5 @@
+import UploadAudio from "@/components/AudioUploader";
+import HeroSection from "@/components/HeroSection";
 import HomeTable from "@/components/HomeTable";
 import Navbar from "@/components/Navbar";
 import ReportsTable from "@/components/ReportsTable";
@@ -7,8 +9,8 @@ export default function Home() {
   return (
     <div className=" flex flex-col  ">
       <Navbar />
-      <HomeTable/>
-      <ReportsTable/>
+      <HeroSection/>
+      <HomeTable />
     </div>
   );
 }

@@ -4,8 +4,8 @@ import axios from "axios";
 
 export default function UploadAudio() {
   const [file, setFile] = useState(null);
-  const [fileUrl, setFileUrl] = useState("");
-  const [report, setReport] = useState(null);
+  const [reportfileUrl, setReportFileUrl] = useState("");
+  const [solution, setSolution] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e) => {
@@ -24,7 +24,7 @@ export default function UploadAudio() {
 
     try {
       const response = await axios.post("/api/upload", formData);
-      setFileUrl(response.data.url);
+      setReportFileUrl(response.data.url);
       alert("File uploaded successfully!");
     } catch (error) {
       console.error("Upload failed:", error);
@@ -45,7 +45,7 @@ export default function UploadAudio() {
       const response = await axios.post("/api/generate-report", {
         s3_url: fileUrl,
       });
-      setReport(response.data);
+      setSolution(response.data);
       alert("Report generated successfully!");
     } catch (error) {
       console.error("Report generation failed:", error);
@@ -62,7 +62,7 @@ export default function UploadAudio() {
         {loading ? "Uploading..." : "Upload Audio"}
       </button>
 
-      {fileUrl && (
+      {reportfileUrl && (
         <>
           <p>
             Uploaded File:{" "}
@@ -80,7 +80,7 @@ export default function UploadAudio() {
         </>
       )}
 
-      {report && (
+      {solution && (
         <div>
           <h2>Reading Report</h2>
           <p>
