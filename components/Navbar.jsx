@@ -33,7 +33,10 @@ const Navbar = () => {
             >
               Report History All
             </Link>
-            <Link href="/services" className={getLinkClass("/services")}>
+            <Link
+              href="/report-history-filtered"
+              className={getLinkClass("/report-history-filtered")}
+            >
               Report History Filtered
             </Link>
             <Link href="/contact" className={getLinkClass("/contact")}>
@@ -74,9 +77,9 @@ const Navbar = () => {
           </li>
           <li>
             <Link
-              href="/services"
+              href="/report-history-filtered"
               className={`${getLinkClass(
-                "/services"
+                "/report-history-filtered"
               )} block px-3 py-2 rounded-md text-base font-medium`}
             >
               Report History Filtered

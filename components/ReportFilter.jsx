@@ -29,6 +29,7 @@ const ReportFilter = () => {
       <label className="font-semibold pl-6 ">Filter Report Generated:</label>
 
       <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
+        <span className="font-semibold">From</span>
         <div className="flex items-center space-x-2">
           <FaCalendarAlt />
           <input
@@ -37,7 +38,7 @@ const ReportFilter = () => {
             onChange={(e) => setFromDate(e.target.value)}
             className="bg-purple-200 rounded-md  px-2 py-1 focus:outline-none w-full md:w-auto"
           />
-          <span className="font-semibold">From</span>
+          <span className="font-semibold">To</span>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -48,7 +49,6 @@ const ReportFilter = () => {
             onChange={(e) => setToDate(e.target.value)}
             className="bg-purple-200 rounded-md px-2 py-1 focus:outline-none w-full md:w-auto"
           />
-          <span className="font-semibold">To</span>
         </div>
       </div>
 

@@ -9,14 +9,13 @@ export async function GET() {
   try {
     const data = await client.send(new ScanCommand(params));
     const reports = data.Items.map((item) => ({
-      StudentName: item.StudentName.S ,
+      StudentName: item.StudentName.S,
       Story: item.Story.S,
       audioFile: item.audioFile.S,
       apiCallTime: item.apiCallTime.S,
       responseTime: Number(item.responseTime.N),
       reportURL: item.reportURL.S,
-      
-      
+      mainReport: item.mainReport?.S ? JSON.parse(item.mainReport.S) : null,
     }));
     return new Response(JSON.stringify(reports), { status: 200 });
   } catch (error) {

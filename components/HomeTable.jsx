@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
 import { useUUID } from "@/app/context/UUIDContext";
+import LoadingComponent from "./LoadingComponent";
 
 const HomeTable = () => {
   const [reports, seTreports] = useState([]);
@@ -66,62 +67,73 @@ const HomeTable = () => {
   };
 
   //ulpoad to student report tabke in dynamodb
-  const uploadToStudentTables = async () => {
-    if (!fileUrl) {
-      alert("No uploaded file URL found!");
-      return;
-    }
+const uploadToStudentTables = async () => {
+  if (!fileUrl) {
+    alert("No uploaded file URL found!");
+    return;
+  }
 
-    if (!userName || !storyName) {
-      alert("Please provide your name and the story name!");
-      return;
-    }
+  if (!userName || !storyName) {
+    alert("Please provide your name and the story name!");
+    return;
+  }
 
-    setLoading(true);
-    const callTime = new Date(); // Record start time here
-    setStartTime(callTime);
+  setLoading(true);
+  const callTime = new Date(); // Record start time here
+  setStartTime(callTime);
 
-    try {
-      // Calculate time taken and call time
-      const endTime = new Date();
-      const duration = (endTime - callTime) / 1000;
-      setTimeTaken(duration);
+  try {
+    // Start timing before generating the report
+    const startTime = performance.now();
+    const reportJSON = await generateReportSASAPI(fileUrl);
+    const endTime = performance.now();
 
-      // Ensure callTime is not null before using toISOString()
-      await axios.post("/api/studentlog/save", {
-        ...response.data,
-        id: uuid,
-        StudentName: userName,
-        Story: storyName,
-        audioFile: fileUrl,
-        apiCallTime: callTime.toISOString(), // Use toISOString() for consistent date format
-        responseTime: duration, // Pass as a number
-        reportURL: fileUrl,
-      });
-      alert("Report generated and saved successfully!");
-    } catch (error) {
-      console.error("Report generation failed:", error);
-      alert("Report generation failed!");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Calculate duration in seconds
+    const duration = Math.round((endTime - startTime) / 1000);
+    setTimeTaken(duration);
+
+    // Ensure callTime is not null before using toISOString()
+    await axios.post("/api/studentlog/save", {
+      ...response.data,
+      id: uuid,
+      StudentName: userName,
+      Story: storyName,
+      audioFile: fileUrl,
+      apiCallTime: callTime.toISOString(), // Use toISOString() for consistent date format
+      responseTime: duration, // Pass as a number (in seconds)
+      reportURL: fileUrl,
+      mainReport: reportJSON,
+    });
+
+    alert("Report generated and saved successfully!");
+  } catch (error) {
+    console.error("Report generation failed:", error);
+    alert("Report generation failed!");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Generate Report from SAS API
-  const generateReportSASAPI = async (reportURL) => {
-    try {
-      const response = await axios.post("/api/generate-report", {
-        s3_url: reportURL,
-      });
-      setResponse(response.data);
-      setReport(response.data);
-    } catch (error) {
-      console.error("Report generation failed:", error);
-      alert("Report generation failed!");
-    } finally {
-      setLoading(false);
-    }
-  };
+const generateReportSASAPI = async (reportURL) => {
+  try {
+    const response = await axios.post("/api/generate-report", {
+      s3_url: reportURL,
+    });
+    const jsonString = JSON.stringify(response.data);
+    setResponse(jsonString);
+    setReport(jsonString);
+    return jsonString; // Return the JSON as a string
+  } catch (error) {
+    console.error("Report generation failed:", error);
+    alert("Report generation failed!");
+    return null;
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Function to display decoded text with color coding
   const renderDecodedText = (decodedText, wordScores) => {
@@ -211,188 +223,203 @@ const generateReport = async (reportfileUrl) => {
 
   return (
     <>
-      {/* Uploading data  */}
-      <div className="p-4">
-        <h1 className="text-2xl font-bold">Speech Assessment Report</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger>
-            <Button
-              onClick={() => {
-                setOpen(true);
-              }}
-            >
-              Open
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upload the Details</DialogTitle>
-              <DialogDescription>
-                {/* User Inputs */}
-                <div className="mt-4">
-                  <input
-                    type="text"
-                    placeholder="Your Name"
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    className="border p-2 rounded mb-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Story Name"
-                    value={storyName}
-                    onChange={(e) => setStoryName(e.target.value)}
-                    className="border p-2 rounded mb-2 w-full"
-                  />
-                </div>
+      {loading ? (
+        <LoadingComponent/>
+      ) : (
+        <div>
+          {/* Uploading data  */}
+          <div className="p-4">
+            <h1 className="text-2xl font-bold">Speech Assessment Report</h1>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger>
+                <Button
+                  onClick={() => {
+                    setOpen(true);
+                  }}
+                >
+                  Open
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Upload the Details</DialogTitle>
+                  <DialogDescription>
+                    {/* User Inputs */}
+                    <div className="mt-4">
+                      <input
+                        type="text"
+                        placeholder="Your Name"
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        className="border p-2 rounded mb-2 w-full"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Story Name"
+                        value={storyName}
+                        onChange={(e) => setStoryName(e.target.value)}
+                        className="border p-2 rounded mb-2 w-full"
+                      />
+                    </div>
 
-                {/* File Upload Section */}
-                <div className="mt-4">
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={handleFileChange}
-                  />
-                  <button
-                    onClick={uploadToS3}
-                    disabled={loading}
-                    className="bg-blue-500 text-white px-4 py-2 rounded ml-2 disabled:opacity-50"
-                  >
-                    {loading ? "Uploading..." : "Upload Audio"}
-                  </button>
-                </div>
-              </DialogDescription>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-7xl mx-auto p-4">
-          <header className="flex justify-between items-center mb-8">
-            <div className="flex items-center gap-4">
-              <img src="/file.svg" alt="Logo" className="w-12 h-12" />
-              <h1 className="text-2xl font-bold">Amazon School of Languages</h1>
-            </div>
-            <nav className="flex gap-8">
-              <a
-                href="#recordings"
-                className="text-lg  underline font-medium hover:text-blue-600"
-              >
-                Recordings
-              </a>
-              <a
-                href="#reports"
-                className="text-lg font-medium hover:text-blue-600"
-              >
-                Reports
-              </a>
-            </nav>
-          </header>
-
-          <div className="overflow-x-auto">
-            <Table className="min-w-full  bg-white rounded-xl shadow-lg overflow-hidden">
-              <Thead className="bg-purple-500 border border-gray-800 text-white font-semibold text-lg">
-                <Tr>
-                  <Th className="py-4 px-6 text-center border border-gray-800">
-                    Student Name
-                  </Th>
-                  <Th className="py-4 px-6 text-center border border-gray-800">
-                    Story Read
-                  </Th>
-                  <Th className="py-4 px-6 text-center border border-gray-800">
-                    Audio File
-                  </Th>
-                  <Th className="py-4 px-6 text-center border border-gray-800">
-                    Report
-                  </Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {reports.map((report, index) => (
-                  <Tr
-                    key={index}
-                    className="border border-gray-600 hover:bg-gray-100 cursor-pointer"
-                  >
-                    <Td className="py-3 px-6 text-left border border-gray-600">
-                      {report.StudentName}
-                    </Td>
-                    <Td className="py-3 px-6 text-left border border-gray-600 ">
-                      {report.Story}
-                    </Td>
-                    <Td className="py-3 px-4 text-left border border-gray-600">
-                      {renderAudioOrPlaceholder(report.audioFile)}
-                      <div>
-                        <Button onClick={() => uploadToStudentTables()}>
-                          Upload
-                        </Button>
-                      </div>
-                    </Td>
-
-                    <Td className="py-3 px-6 text-left">
-                      {report.reportURL && (
-                        <div className="mt-4">
-                          <button
-                            onClick={() =>
-                              generateReportSASAPI(report.reportURL)
-                            }
-                            disabled={loading}
-                            className="bg-green-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50"
-                          >
-                            {loading
-                              ? "Generating Report..."
-                              : "Generate Report"}
-                          </button>
-
-                          <Button
-                            onClick={() => generateReport(report.reportURL)}
-                            // disabled={viewloading}
-                            className="bg-blue-500 text-white px-4 py-2 rounded mt-4 ml-4 disabled:opacity-50"
-                          >
-                            {" "}
-                            view report
-                          </Button>
-                        </div>
-                      )}
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
+                    {/* File Upload Section */}
+                    <div className="mt-4">
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={handleFileChange}
+                      />
+                      <button
+                        onClick={uploadToS3}
+                        disabled={loading}
+                        className="bg-blue-500 text-white px-4 py-2 rounded ml-2 disabled:opacity-50"
+                      >
+                        {loading ? "Uploading..." : "Upload Audio"}
+                      </button>
+                      <Button onClick={() => uploadToStudentTables()}>
+                        Upload
+                      </Button>
+                    </div>
+                  </DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
           </div>
-          <div id="generated-report" className="mt-8">
-            {solution && (
-              <div>
-                <h2>Reading Report</h2>
-                <p>
-                  <strong>Decoded Text:</strong> {solution.decoded_text}
-                </p>
-                <p>
-                  <strong>Words Correct Per Minute (WCPM):</strong>{" "}
-                  {solution.wcpm}
-                </p>
-                <p>
-                  <strong>Pronunciation Score:</strong> {solution.pron_score}
-                </p>
-                <p>
-                  <strong>Speech Rate:</strong> {solution.speech_rate}
-                </p>
-                <p>
-                  <strong>Correct Words:</strong> {solution.no_corr}
-                </p>
-                <p>
-                  <strong>Miscues:</strong> {solution.no_miscue}
-                </p>
-                <p>
-                  <strong>Percent Attempted:</strong> {solution.percent_attempt}
-                  %
-                </p>
-                {renderDecodedText(solution.decoded_text, solution.word_scores)}
+
+          <div className="min-h-screen bg-gray-50 p-4">
+            <div className="max-w-7xl mx-auto p-4">
+              <header className="flex justify-between items-center mb-8">
+                <div className="flex items-center gap-4">
+                  <img src="/file.svg" alt="Logo" className="w-12 h-12" />
+                  <h1 className="text-2xl font-bold">
+                    Amazon School of Languages
+                  </h1>
+                </div>
+                <nav className="flex gap-8">
+                  <a
+                    href="#recordings"
+                    className="text-lg  underline font-medium hover:text-blue-600"
+                  >
+                    Recordings
+                  </a>
+                  <a
+                    href="#reports"
+                    className="text-lg font-medium hover:text-blue-600"
+                  >
+                    Reports
+                  </a>
+                </nav>
+              </header>
+
+              <div className="overflow-x-auto">
+                <Table className="min-w-full  bg-white rounded-xl shadow-lg overflow-hidden">
+                  <Thead className="bg-purple-500 border border-gray-800 text-white font-semibold text-lg">
+                    <Tr>
+                      <Th className="py-4 px-6 text-center border border-gray-800">
+                        Student Name
+                      </Th>
+                      <Th className="py-4 px-6 text-center border border-gray-800">
+                        Story Read
+                      </Th>
+                      <Th className="py-4 px-6 text-center border border-gray-800">
+                        Audio File
+                      </Th>
+                      <Th className="py-4 px-6 text-center border border-gray-800">
+                        Report
+                      </Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {reports.map((report, index) => (
+                      <Tr
+                        key={index}
+                        className="border border-gray-600 hover:bg-gray-100 cursor-pointer"
+                      >
+                        <Td className="py-3 px-6 text-left border border-gray-600">
+                          {report.StudentName}
+                        </Td>
+                        <Td className="py-3 px-6 text-left border border-gray-600 ">
+                          {report.Story}
+                        </Td>
+                        <Td className="py-3 px-4 text-left border border-gray-600">
+                          {renderAudioOrPlaceholder(report.audioFile)}
+                          <div>
+                            <Button onClick={() => uploadToStudentTables()}>
+                              Upload
+                            </Button>
+                          </div>
+                        </Td>
+
+                        <Td className="py-3 px-6 text-left">
+                          {report.reportURL && (
+                            <div className="mt-4">
+                              <button
+                                onClick={() =>
+                                  generateReportSASAPI(report.reportURL)
+                                }
+                                disabled={loading}
+                                className="bg-green-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50"
+                              >
+                                {loading
+                                  ? "Generating Report..."
+                                  : "Generate Report"}
+                              </button>
+
+                              <Button
+                                onClick={() => generateReport(report.reportURL)}
+                                // disabled={viewloading}
+                                className="bg-blue-500 text-white px-4 py-2 rounded mt-4 ml-4 disabled:opacity-50"
+                              >
+                                {" "}
+                                view report
+                              </Button>
+                            </div>
+                          )}
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
               </div>
-            )}
+              <div id="generated-report" className="mt-8">
+                {solution && (
+                  <div>
+                    <h2>Reading Report</h2>
+                    <p>
+                      <strong>Decoded Text:</strong> {solution.decoded_text}
+                    </p>
+                    <p>
+                      <strong>Words Correct Per Minute (WCPM):</strong>{" "}
+                      {solution.wcpm}
+                    </p>
+                    <p>
+                      <strong>Pronunciation Score:</strong>{" "}
+                      {solution.pron_score}
+                    </p>
+                    <p>
+                      <strong>Speech Rate:</strong> {solution.speech_rate}
+                    </p>
+                    <p>
+                      <strong>Correct Words:</strong> {solution.no_corr}
+                    </p>
+                    <p>
+                      <strong>Miscues:</strong> {solution.no_miscue}
+                    </p>
+                    <p>
+                      <strong>Percent Attempted:</strong>{" "}
+                      {solution.percent_attempt}%
+                    </p>
+                    {renderDecodedText(
+                      solution.decoded_text,
+                      solution.word_scores
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 };

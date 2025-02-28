@@ -1,79 +1,102 @@
 import React from "react";
 
-const ReadingReport = ({ solution, renderDecodedText }) => {
+const ReadingReport = ({ solution}) => {
   if (!solution) return null;
+
+  const reportSolution = solution.mainReport;
+
+  const renderAudioOrPlaceholder = (audioFile) => {
+    if (!audioFile) {
+      return <div>Not uploaded</div>;
+    }
+    return (
+      <div className="flex w-30">
+        <audio controls>
+          <source src={audioFile} type="audio/mpeg" />
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+    );
+  };
+
+  // Function to display decoded text with color coding
+  const renderDecodedText = (decodedText, wordScores) => {
+    const scoreMap = {};
+    wordScores.forEach(([word, score]) => {
+      scoreMap[word.toLowerCase()] = score;
+    });
+
+    const words = decodedText.split(" ");
+    return words.map((word, index) => {
+      const score = scoreMap[word.toLowerCase()] || 0;
+      let className = "";
+
+      if (score === 1) {
+        className = "text-green-600";
+      } else if (score >= 0.6) {
+        className = "text-orange-500";
+      } else {
+        className = "text-gray-900 line-through";
+      }
+
+      return (
+        <span key={index} className={`${className}  `}>
+          {word}
+        </span>
+      );
+    });
+  };
 
   return (
     <>
-      <div id="generated-report" className="mt-8">
-        <h2>Reading Report</h2>
-        <p>
-          <strong>Decoded Text:</strong> {solution.decoded_text}
-        </p>
-        <p>
-          <strong>Words Correct Per Minute (WCPM):</strong> {solution.wcpm}
-        </p>
-        <p>
-          <strong>Pronunciation Score:</strong> {solution.pron_score}
-        </p>
-        <p>
-          <strong>Speech Rate:</strong> {solution.speech_rate}
-        </p>
-        <p>
-          <strong>Correct Words:</strong> {solution.no_corr}
-        </p>
-        <p>
-          <strong>Miscues:</strong> {solution.no_miscue}
-        </p>
-        <p>
-          <strong>Percent Attempted:</strong> {solution.percent_attempt}%
-        </p>
-        {renderDecodedText(solution.decoded_text, solution.word_scores)}
-      </div>
-
-      <div className="min-h-screen bg-white p-8">
-        <div className="max-w-3xl mx-auto bg-gray-100 shadow-lg rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-center mb-4">
+      <div>
+        <div className="max-w-4xl mx-auto w-full bg-white shadow-2xl rounded-xl p-8">
+          <h1 className="text-2xl font-bold text-center mb-8 text-purple-700">
             Amazon School of Languages
           </h1>
-          <div className="flex justify-between text-purple-600 mb-4">
-            <span>
-              Student Name: <strong>Shahrukh</strong>
+          <div className="flex justify-between text-black text-lg mb-6">
+            <span className="">
+              Student Name:{" "}
+              <strong className="text-purple-600">
+                {solution.StudentName}
+              </strong>
             </span>
             <span>
-              Story Name: <strong>Dams</strong>
+              Story Name:{" "}
+              <strong className="text-purple-600">{solution.Story}</strong>
             </span>
             <span>
-              Report Time: <strong>16-03-2024 14:20:43</strong>
+              Report Time:{" "}
+              <strong className="text-purple-600">
+                {solution.apiCallTime}
+              </strong>
             </span>
           </div>
-          <p className="bg-white p-4 rounded-md shadow-md leading-6 text-gray-800">
-            a dam is a <span className="text-orange-500">wall</span> across a
-            river when it rains a lot <span className="text-red-500">lost</span>{" "}
-            of water goes down the river and into the sea the dam to stops the
-            water the water then{" "}
-            <span className="text-orange-500">becomes</span> a big lake{" "}
-            <span className="text-green-500">lake</span> be_in(
-            <span className="text-orange-500">behind</span>) built the dam later
-            this water is let out into the fields there it helps crops like rice
-            to grow
+          <p className="flex flex-wrap gap-1 leading-relaxed text-lg font-semibold">
+            {renderDecodedText(
+              reportSolution.decoded_text,
+              reportSolution.word_scores
+            )}
           </p>
-          <button className="bg-purple-400 text-white py-2 px-4 rounded-md shadow-md mt-4 hover:bg-purple-500 transition">
-            Play Audio
+
+          <button className="bg-purple-600 text-white py-3 px-6 rounded-lg shadow-lg mt-6 hover:bg-purple-700 transition text-lg">
+            {renderAudioOrPlaceholder(solution.audioFile)}
           </button>
-          <table className="mt-6 w-full text-center border-collapse">
+          <table className="mt-8 w-full text-center border-collapse text-lg">
             <thead>
               <tr>
-                <th className="border border-gray-300 px-4 py-2">WCPM</th>
-                <th className="border border-gray-300 px-4 py-2">
-                  Speech Rate
-                </th>
+                <th className="border border-gray-300 px-6 py-4">WCPM</th>
+                <th className="border border-gray-300 px-6 py-4"> Speech Rate</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td className="border border-gray-300 px-4 py-2">24</td>
-                <td className="border border-gray-300 px-4 py-2">3.5</td>
+                <td className="border border-gray-300 px-6 py-4">
+                  {reportSolution.wcpm}
+                </td>
+                <td className="border border-gray-300 px-6 py-4">
+                  {reportSolution.speech_rate}
+                </td>
               </tr>
             </tbody>
           </table>

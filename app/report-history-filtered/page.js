@@ -7,9 +7,7 @@ import "react-super-responsive-table/dist/SuperResponsiveTableStyle.css";
 import { useUUID } from "@/app/context/UUIDContext";
 import { AudioPlayer } from "@/components/AudioPlayComponent";
 import Navbar from "@/components/Navbar";
-import ReadingReport from "@/components/ReadingReport";
 import ReportFilter from "@/components/ReportFilter";
-import Link from "next/link";
 import LoadingComponent from "@/components/LoadingComponent";
 import SolutionDisplay from "@/components/SolutionDisplay";
 
@@ -20,10 +18,9 @@ const Page = () => {
   const [solution, setSolution] = useState(null);
   const { uuid } = useUUID();
 
-  console.log(uuid);
+//   console.log(uuid);
 
   const [open, setOpen] = useState(false);
-
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -38,50 +35,6 @@ const Page = () => {
     };
     fetchReports();
   }, []);
-
-  const clickOnURL = (id) => {
-    router.push(`/report/${id}`);
-  };
-
-  // checking audio file is working or not
-
-  const generateReport = async (reportfileUrl) => {
-    if (!reportfileUrl) {
-      alert("No uploaded file URL found!");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await axios.post("/api/generate-report", {
-        s3_url: reportfileUrl,
-      });
-      setSolution(response.data);
-      alert("Report generated successfully!");
-
-      // Scroll to the section with id "generated-report"
-      document.getElementById("generated-report");
-    } catch (error) {
-      console.error("Report generation failed:", error);
-      alert("Report generation failed!");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const renderAudioOrPlaceholder = (audioFile) => {
-    if (!audioFile) {
-      return <div>Not uploaded</div>;
-    }
-    return (
-      <div className="flex w-30">
-        <audio controls>
-          <source src={audioFile} type="audio/mpeg" />
-          Your browser does not support the audio element.
-        </audio>
-      </div>
-    );
-  };
 
   const formatDateTime = (isoString) => {
     const date = new Date(isoString);
@@ -112,8 +65,6 @@ const Page = () => {
   const handleRowClick = (id) => {
     router.push(`/report/${id}`);
   };
-
-
 
   return (
     <>
@@ -198,10 +149,11 @@ const Page = () => {
 
                         <Td className="py-3 px-6 text-center">
                           {report.reportURL && (
-                            <div className="mt-4">
+                            <div className="mt-4 ">
                               <p>
                                 <SolutionDisplay solution={report} />
                               </p>
+                              
                               {formatDateTime(
                                 addTime(report.apiCallTime, {
                                   seconds: report.responseTime,

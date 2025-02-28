@@ -11,6 +11,7 @@ export async function POST(request) {
     apiCallTime,
     responseTime,
     reportURL,
+    mainReport
   } = await request.json();
 
   // Debugging: Log all incoming data
@@ -38,8 +39,9 @@ export async function POST(request) {
       Story: { S: Story },
       audioFile: { S: audioFile },
       apiCallTime: { S: apiCallTime },
-      responseTime: { N: (responseTime).toString() },
+      responseTime: { N: responseTime.toString() },
       reportURL: { S: reportURL },
+      mainReport: { S: JSON.stringify(mainReport) },
     },
   };
 
