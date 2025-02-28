@@ -20,7 +20,6 @@ const HomeTable = () => {
   const [reports, seTreports] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
   const [file, setFile] = useState(null);
   const [fileUrl, setFileUrl] = useState("");
   const [report, setReport] = useState(null);
@@ -31,11 +30,17 @@ const HomeTable = () => {
   const [timeTaken, setTimeTaken] = useState(null);
   const [response, setResponse] = useState([]);
   const [solution, setSolution] = useState(null);
+  const [audioUploaded, setAudioUploaded] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const { uuid } = useUUID();
 
   console.log(uuid);
 
   const [open, setOpen] = useState(false);
+
+  const handleAudioUpload = () => {
+    setAudioUploaded(true);
+  };
 
   // Select audio file
   const handleFileChange = (e) => {
@@ -63,77 +68,77 @@ const HomeTable = () => {
     } finally {
       setLoading(false);
       setOpen(false);
+      setUploading(true);
     }
   };
 
   //ulpoad to student report tabke in dynamodb
-const uploadToStudentTables = async () => {
-  if (!fileUrl) {
-    alert("No uploaded file URL found!");
-    return;
-  }
+  const uploadToStudentTables = async () => {
+    if (!fileUrl) {
+      alert("No uploaded file URL found!");
+      return;
+    }
 
-  if (!userName || !storyName) {
-    alert("Please provide your name and the story name!");
-    return;
-  }
+    if (!userName || !storyName) {
+      alert("Please provide your name and the story name!");
+      return;
+    }
 
-  setLoading(true);
-  const callTime = new Date(); // Record start time here
-  setStartTime(callTime);
+    setLoading(true);
+    const callTime = new Date(); // Record start time here
+    setStartTime(callTime);
 
-  try {
-    // Start timing before generating the report
-    const startTime = performance.now();
-    const reportJSON = await generateReportSASAPI(fileUrl);
-    const endTime = performance.now();
+    try {
+      // Start timing before generating the report
+      const startTime = performance.now();
+      const reportJSON = await generateReportSASAPI(fileUrl);
+      const endTime = performance.now();
 
-    // Calculate duration in seconds
-    const duration = Math.round((endTime - startTime) / 1000);
-    setTimeTaken(duration);
+      // Calculate duration in seconds
+      const duration = Math.round((endTime - startTime) / 1000);
+      setTimeTaken(duration);
 
-    // Ensure callTime is not null before using toISOString()
-    await axios.post("/api/studentlog/save", {
-      ...response.data,
-      id: uuid,
-      StudentName: userName,
-      Story: storyName,
-      audioFile: fileUrl,
-      apiCallTime: callTime.toISOString(), // Use toISOString() for consistent date format
-      responseTime: duration, // Pass as a number (in seconds)
-      reportURL: fileUrl,
-      mainReport: reportJSON,
-    });
+      // Ensure callTime is not null before using toISOString()
+      await axios.post("/api/studentlog/save", {
+        ...response.data,
+        id: uuid,
+        StudentName: userName,
+        Story: storyName,
+        audioFile: fileUrl,
+        apiCallTime: callTime.toISOString(), // Use toISOString() for consistent date format
+        responseTime: duration, // Pass as a number (in seconds)
+        reportURL: fileUrl,
+        mainReport: reportJSON,
+      });
 
-    alert("Report generated and saved successfully!");
-  } catch (error) {
-    console.error("Report generation failed:", error);
-    alert("Report generation failed!");
-  } finally {
-    setLoading(false);
-  }
-};
-
+      alert("Report generated and saved successfully!");
+    } catch (error) {
+      console.error("Report generation failed:", error);
+      alert("Report generation failed!");
+    } finally {
+      setLoading(false);
+      setUploading(false);
+    }
+  };
 
   // Generate Report from SAS API
-const generateReportSASAPI = async (reportURL) => {
-  try {
-    const response = await axios.post("/api/generate-report", {
-      s3_url: reportURL,
-    });
-    const jsonString = JSON.stringify(response.data);
-    setResponse(jsonString);
-    setReport(jsonString);
-    return jsonString; // Return the JSON as a string
-  } catch (error) {
-    console.error("Report generation failed:", error);
-    alert("Report generation failed!");
-    return null;
-  } finally {
-    setLoading(false);
-  }
-};
-
+  const generateReportSASAPI = async (reportURL) => {
+    try {
+      const response = await axios.post("/api/generate-report", {
+        s3_url: reportURL,
+      });
+      const jsonString = JSON.stringify(response.data);
+      setResponse(jsonString);
+      setReport(jsonString);
+      return jsonString; // Return the JSON as a string
+    } catch (error) {
+      console.error("Report generation failed:", error);
+      alert("Report generation failed!");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Function to display decoded text with color coding
   const renderDecodedText = (decodedText, wordScores) => {
@@ -181,31 +186,31 @@ const generateReportSASAPI = async (reportURL) => {
 
   // checking audio file is working or not
 
-const generateReport = async (reportfileUrl) => {
-  if (!reportfileUrl) {
-    alert("No uploaded file URL found!");
-    return;
-  }
+  const generateReport = async (reportfileUrl) => {
+    if (!reportfileUrl) {
+      alert("No uploaded file URL found!");
+      return;
+    }
 
-  setViewLoading(true);
-  try {
-    const response = await axios.post("/api/generate-report", {
-      s3_url: reportfileUrl,
-    });
-    setSolution(response.data);
-    alert("Report generated successfully!");
+    setViewLoading(true);
+    try {
+      const response = await axios.post("/api/generate-report", {
+        s3_url: reportfileUrl,
+      });
+      setSolution(response.data);
+      alert("Report generated successfully!");
 
-    // Scroll to the section with id "generated-report"
-    document
-      .getElementById("generated-report")
-      .scrollIntoView({ behavior: "smooth" });
-  } catch (error) {
-    console.error("Report generation failed:", error);
-    alert("Report generation failed!");
-  } finally {
-    setViewLoading(false);
-  }
-};
+      // Scroll to the section with id "generated-report"
+      document
+        .getElementById("generated-report")
+        .scrollIntoView({ behavior: "smooth" });
+    } catch (error) {
+      console.error("Report generation failed:", error);
+      alert("Report generation failed!");
+    } finally {
+      setViewLoading(false);
+    }
+  };
 
   const renderAudioOrPlaceholder = (audioFile) => {
     if (!audioFile) {
@@ -224,68 +229,9 @@ const generateReport = async (reportfileUrl) => {
   return (
     <>
       {loading ? (
-        <LoadingComponent/>
+        <LoadingComponent />
       ) : (
         <div>
-          {/* Uploading data  */}
-          <div className="p-4">
-            <h1 className="text-2xl font-bold">Speech Assessment Report</h1>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger>
-                <Button
-                  onClick={() => {
-                    setOpen(true);
-                  }}
-                >
-                  Open
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Upload the Details</DialogTitle>
-                  <DialogDescription>
-                    {/* User Inputs */}
-                    <div className="mt-4">
-                      <input
-                        type="text"
-                        placeholder="Your Name"
-                        value={userName}
-                        onChange={(e) => setUserName(e.target.value)}
-                        className="border p-2 rounded mb-2 w-full"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Story Name"
-                        value={storyName}
-                        onChange={(e) => setStoryName(e.target.value)}
-                        className="border p-2 rounded mb-2 w-full"
-                      />
-                    </div>
-
-                    {/* File Upload Section */}
-                    <div className="mt-4">
-                      <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={handleFileChange}
-                      />
-                      <button
-                        onClick={uploadToS3}
-                        disabled={loading}
-                        className="bg-blue-500 text-white px-4 py-2 rounded ml-2 disabled:opacity-50"
-                      >
-                        {loading ? "Uploading..." : "Upload Audio"}
-                      </button>
-                      <Button onClick={() => uploadToStudentTables()}>
-                        Upload
-                      </Button>
-                    </div>
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
-          </div>
-
           <div className="min-h-screen bg-gray-50 p-4">
             <div className="max-w-7xl mx-auto p-4">
               <header className="flex justify-between items-center mb-8">
@@ -310,6 +256,68 @@ const generateReport = async (reportfileUrl) => {
                   </a>
                 </nav>
               </header>
+              {/* Uploading data  */}
+              <div className="p-4 flex justify-between items-center">
+                <h1 className="text-2xl font-bold">Speech Assessment Report</h1>
+
+                <Dialog open={open} onOpenChange={setOpen}>
+                  <DialogTrigger>
+                    {uploading ? (
+                      <Button onClick={() => uploadToStudentTables()}>
+                        Submit Your Details
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => {
+                          {setOpen(true)} setUploading(false);
+                        }}
+                      >
+                        Upload the details and Audio
+                      </Button>
+                    )}
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Upload the Details</DialogTitle>
+                      <DialogDescription>
+                        {/* User Inputs */}
+                        <div className="mt-4">
+                          <input
+                            type="text"
+                            placeholder="Your Name"
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            className="border p-2 rounded mb-2 w-full"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Story Name"
+                            value={storyName}
+                            onChange={(e) => setStoryName(e.target.value)}
+                            className="border p-2 rounded mb-2 w-full"
+                          />
+                        </div>
+
+                        {/* File Upload Section */}
+                        <div className="mt-4">
+                          <input
+                            type="file"
+                            accept="audio/*"
+                            onChange={handleFileChange}
+                          />
+                          <button
+                            onClick={uploadToS3}
+                            disabled={loading}
+                            className="bg-blue-500 text-white px-4 py-2 rounded ml-2 disabled:opacity-50"
+                          >
+                            {loading ? "Uploading..." : "Upload Audio File"}
+                          </button>
+                        </div>
+                      </DialogDescription>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
+              </div>
 
               <div className="overflow-x-auto">
                 <Table className="min-w-full  bg-white rounded-xl shadow-lg overflow-hidden">
@@ -342,29 +350,38 @@ const generateReport = async (reportfileUrl) => {
                           {report.Story}
                         </Td>
                         <Td className="py-3 px-4 text-left border border-gray-600">
-                          {renderAudioOrPlaceholder(report.audioFile)}
-                          <div>
-                            <Button onClick={() => uploadToStudentTables()}>
-                              Upload
-                            </Button>
+                          {/* {renderAudioOrPlaceholder(report.audioFile)} */}
+                          <div className="flex w-30 items-center justify-center align-center">
+                            {!audioUploaded ? (
+                              <div>
+                                <p>Audio Uploaded</p>
+                                <Button
+                                  onClick={handleAudioUpload}
+                                  variant="outline"
+                                >
+                                  Upload Again
+                                </Button>
+                              </div>
+                            ) : (
+                              <p>
+                                {" "}
+                                <div>
+                                  <p>Upload now</p>
+                                  <Button
+                                    onClick={() => uploadToStudentTables()}
+                                    variant="outline"
+                                  >
+                                    Upload New
+                                  </Button>
+                                </div>
+                              </p>
+                            )}
                           </div>
                         </Td>
 
                         <Td className="py-3 px-6 text-left">
                           {report.reportURL && (
                             <div className="mt-4">
-                              <button
-                                onClick={() =>
-                                  generateReportSASAPI(report.reportURL)
-                                }
-                                disabled={loading}
-                                className="bg-green-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50"
-                              >
-                                {loading
-                                  ? "Generating Report..."
-                                  : "Generate Report"}
-                              </button>
-
                               <Button
                                 onClick={() => generateReport(report.reportURL)}
                                 // disabled={viewloading}

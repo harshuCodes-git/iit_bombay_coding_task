@@ -147,7 +147,7 @@ const Page = () => {
                   </a>
                 </nav>
               </header>
-              <ReportFilter />
+              
 
               <div className="overflow-x-auto">
                 <Table className="min-w-full  bg-white rounded-xl shadow-lg overflow-hidden">
