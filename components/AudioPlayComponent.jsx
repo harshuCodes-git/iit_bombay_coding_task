@@ -37,11 +37,17 @@ export const AudioPlayer = ({ audioFile }) => {
             {isPlaying ? <Pause size={20} /> : <Play size={20} />}
           </button>
           <button
-            onClick={downloadAudio}
+            onClick={() => {
+              const url = downloadAudio(); 
+              if (url) {
+                window.open(url, "_blank"); // Opens in a new tab
+              }
+            }}
             className="p-2 bg-green-500 text-white rounded-full shadow-md hover:bg-green-600 transition duration-300"
           >
-            <Download size={20} />
+            <Download size={24}/>
           </button>
+
           <audio
             ref={audioRef}
             src={audioFile}

@@ -3,7 +3,7 @@ import React from "react";
 const ReadingReport = ({ solution}) => {
   if (!solution) return null;
 
-  const reportSolution = solution.mainReport;
+  
 
   const renderAudioOrPlaceholder = (audioFile) => {
     if (!audioFile) {
@@ -19,38 +19,58 @@ const ReadingReport = ({ solution}) => {
     );
   };
 
+  function cleanAndParseJson(jsonString) {
+    try {
+      if (typeof jsonString !== "string") return jsonString; // If already an object, return as is
+      const cleanedString = jsonString.replace(/\\/g, "");
+      return JSON.parse(cleanedString);
+    } catch (error) {
+      console.error("Error decoding JSON:", error);
+      return {};
+    }
+  }
+
+  const reportSolution =
+    solution?.mainReport && typeof solution.mainReport === "string"
+      ? cleanAndParseJson(solution.mainReport)
+      : solution.mainReport || {}; 
+
   // Function to display decoded text with color coding
-  const renderDecodedText = (decodedText, wordScores) => {
-    const scoreMap = {};
-    wordScores.forEach(([word, score]) => {
-      scoreMap[word.toLowerCase()] = score;
-    });
+const renderDecodedText = (decodedText, wordScores) => {
+  if (!Array.isArray(wordScores)) {
+    return <span className="text-gray-500">No word scores available</span>;
+  }
 
-    const words = decodedText.split(" ");
-    return words.map((word, index) => {
-      const score = scoreMap[word.toLowerCase()] || 0;
-      let className = "";
+  const scoreMap = {};
+  wordScores.forEach(([word, score]) => {
+    scoreMap[word.toLowerCase()] = score;
+  });
 
-      if (score === 1) {
-        className = "text-green-600";
-      } else if (score >= 0.6) {
-        className = "text-orange-500";
-      } else {
-        className = "text-gray-900 line-through";
-      }
+  return decodedText.split(" ").map((word, index) => {
+    const score = scoreMap[word.toLowerCase()] || 0;
+    let className = "";
 
-      return (
-        <span key={index} className={`${className}  `}>
-          {word}
-        </span>
-      );
-    });
-  };
+    if (score === 1) {
+      className = "text-green-600";
+    } else if (score >= 0.6) {
+      className = "text-orange-500";
+    } else {
+      className = "text-gray-900 line-through";
+    }
+
+    return (
+      <span key={index} className={className}>
+        {word}{" "}
+      </span>
+    );
+  });
+};
+
 
   return (
     <>
       <div>
-        <div className="max-w-4xl mx-auto w-full bg-white shadow-2xl rounded-xl p-8">
+        <div className="max-w-4xl mx-auto w-full shadow-lg p-8">
           <h1 className="text-2xl font-bold text-center mb-8 text-purple-700">
             Amazon School of Languages
           </h1>
@@ -79,14 +99,31 @@ const ReadingReport = ({ solution}) => {
             )}
           </p>
 
-          <button className="bg-purple-600 text-white py-3 px-6 rounded-lg shadow-lg mt-6 hover:bg-purple-700 transition text-lg">
-            {renderAudioOrPlaceholder(solution.audioFile)}
-          </button>
+          <div className="grid grid-cols-2 gap-2 items-center mt-4">
+            {/* Right Column - Clickable Link */}
+            <a
+              href={solution.audioFile} 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline text-lg font-semibold"
+            >
+              Click Here To Download Audio
+            </a>
+
+            {/* Left Column - Button */}
+            <button className="py-1 px-2 rounded-lg  transition">
+              {renderAudioOrPlaceholder(solution.audioFile)}
+            </button>
+          </div>
+
           <table className="mt-8 w-full text-center border-collapse text-lg">
             <thead>
               <tr>
                 <th className="border border-gray-300 px-6 py-4">WCPM</th>
-                <th className="border border-gray-300 px-6 py-4"> Speech Rate</th>
+                <th className="border border-gray-300 px-6 py-4">
+                  {" "}
+                  Speech Rate
+                </th>
               </tr>
             </thead>
             <tbody>

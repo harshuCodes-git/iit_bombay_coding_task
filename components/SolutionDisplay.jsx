@@ -1,5 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
+import watermarkImage from "../public/waterMarkLogo.png"; // Import the watermark image
+
 import {
   Dialog,
   DialogTrigger,
@@ -10,21 +14,27 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-
 import { Button } from "@/components/ui/button";
 import ReadingReport from "@/components/ReadingReport";
 import DetailReport from "./DetailReport";
 
 const SolutionDisplay = ({ solution }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const reportSolution = solution.mainReport;
+  const reportRef = useRef(null); // Reference for capturing report
+
+  function cleanAndParseJson(jsonString) {
+    try {
+      const cleanedString = jsonString.replace(/\\/g, "");
+      return JSON.parse(cleanedString);
+    } catch (error) {
+      console.error("Error decoding JSON:", error);
+      return {};
+    }
+  }
+
+  const reportSolution = solution?.mainReport
+    ? cleanAndParseJson(solution.mainReport)
+    : {};
 
   if (!reportSolution) {
     return <p>No report data available.</p>;
@@ -35,6 +45,79 @@ const SolutionDisplay = ({ solution }) => {
     setIsOpen((prev) => !prev);
   };
 
+  // Function to generate PDF with image watermark, header & footer
+const downloadPDF = async () => {
+  if (!reportRef.current) return;
+
+  // Capture the content as an image
+  const canvas = await html2canvas(reportRef.current, { scale: 2 });
+  const imgData = canvas.toDataURL("image/png");
+
+  const pdf = new jsPDF("p", "mm", "a4");
+  const imgWidth = 210; // A4 width in mm
+  const imgHeight = (canvas.height * imgWidth) / canvas.width; // Maintain aspect ratio
+
+  // Get current date & time
+  const now = new Date();
+  const formattedDateTime =
+    now.toLocaleDateString() + " " + now.toLocaleTimeString();
+
+  // Add Header
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(14);
+
+  // Left-side text (Student Report)
+  pdf.text(`Student Report - ${solution.StudentName}`, 15, 15);
+
+  // Right-side text (Digital Audio Processing Task)
+  pdf.text("Digital Audio Processing Task", 200, 15, { align: "right" });
+
+  // Date and time below the report title
+  pdf.setFontSize(10);
+  pdf.text(`Generated on: ${formattedDateTime}`, 15, 22);
+
+  // Load watermark image
+  const watermark = new Image();
+  watermark.src = "./waterMarkLogo.png"; // Ensure the image is in the `public/` folder
+
+  watermark.onload = () => {
+    const watermarkWidth = 100; // Adjust as needed
+    const watermarkHeight = 100; // Adjust as needed
+    const centerX = (pdf.internal.pageSize.width - watermarkWidth) / 2;
+    const centerY = (pdf.internal.pageSize.height - watermarkHeight) / 2;
+
+    // Set transparency
+    pdf.setGState(new pdf.GState({ opacity: 0.2 }));
+
+    // Add the watermark
+    pdf.addImage(
+      watermark,
+      "PNG",
+      centerX,
+      centerY,
+      watermarkWidth,
+      watermarkHeight
+    );
+
+    // Reset opacity
+    pdf.setGState(new pdf.GState({ opacity: 1 }));
+
+    // Add the captured content
+    pdf.addImage(imgData, "PNG", 0, 30, imgWidth, imgHeight);
+
+    // Add footer with page numbers
+    const pageCount = pdf.internal.getNumberOfPages();
+    pdf.setFontSize(10);
+    for (let i = 1; i <= pageCount; i++) {
+      pdf.setPage(i);
+      pdf.text(`Page ${i} of ${pageCount}`, 95, 290);
+    }
+
+    // Save the PDF after everything is added
+    pdf.save(`Report_${solution.StudentName}.pdf`);
+  };
+};
+
 
   return (
     <>
@@ -44,7 +127,7 @@ const SolutionDisplay = ({ solution }) => {
       >
         View Report
       </p>
-      <div className="max-w-full ">
+      <div className="max-w-full">
         <Dialog open={isOpen} onOpenChange={setIsOpen} className="max-w-full">
           <DialogContent className="max-w-full sm:max-w-3xl lg:max-w-6xl w-full overflow-auto max-h-[90vh]">
             <DialogHeader>
@@ -52,33 +135,19 @@ const SolutionDisplay = ({ solution }) => {
               <DialogDescription>Details of the report</DialogDescription>
             </DialogHeader>
 
-            {/* Carousel Setup */}
-            <Carousel>
-              <CarouselContent>
-                <CarouselItem>
-                  <ReadingReport
-                    solution={solution}
-                  />
-                </CarouselItem>
-                <CarouselItem>
-                  <DetailReport solution={reportSolution} />
-                </CarouselItem>
-              </CarouselContent>
-              <CarouselPrevious className="bg-green-400 border " />
-              <CarouselNext className="bg-green-400  border " />
-            </Carousel>
+            {/* Report Section (Capturing Full Content for PDF) */}
+            <div ref={reportRef} className="p-4  space-y-6">
+              <ReadingReport solution={solution} />
+              <DetailReport solution={reportSolution} />
+            </div>
 
-            {/* Updated Button Position and Functionality */}
+            {/* Buttons: PDF Download & Close */}
             <div className="flex justify-between mt-4">
               <Button
-                onClick={() => {
-                  const nextButton = document.querySelector(
-                    ".carousel-next-button"
-                  );
-                  nextButton?.click(); // Trigger the next carousel item
-                }}
+                onClick={downloadPDF}
+                className="bg-blue-500 hover:bg-blue-600"
               >
-                More Detail
+                Download PDF
               </Button>
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
@@ -87,58 +156,6 @@ const SolutionDisplay = ({ solution }) => {
           </DialogContent>
         </Dialog>
       </div>
-
-      {/* <div className="p-4 bg-white rounded-lg shadow-md mt-4 max-w-full overflow-auto">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">Report Details</h2>
-        <ul className="space-y-2 text-sm sm:text-base">
-          <li>
-            <strong>File ID:</strong> {solution.file_id ?? "N/A"}
-          </li>
-          <li>
-            <strong>Audio Type:</strong> {solution.audio_type ?? "N/A"}
-          </li>
-          <li>
-            <strong>Decoded Text:</strong> {solution.decoded_text ?? "N/A"}
-          </li>
-          <li>
-            <strong>Number of Words:</strong> {solution.no_words ?? "N/A"}
-          </li>
-          <li>
-            <strong>Number of Deletions:</strong> {solution.no_del ?? "N/A"}
-          </li>
-          <li>
-            <strong>Number of Insertions:</strong> {solution.no_ins ?? "N/A"}
-          </li>
-          <li>
-            <strong>Number of Substitutions:</strong>{" "}
-            {solution.no_subs ?? "N/A"}
-          </li>
-          <li>
-            <strong>Number of Miscues:</strong> {solution.no_miscue ?? "N/A"}
-          </li>
-          <li>
-            <strong>Number of Corrections:</strong> {solution.no_corr ?? "N/A"}
-          </li>
-          <li>
-            <strong>Words Correct Per Minute (WCPM):</strong>{" "}
-            {solution.wcpm ?? "N/A"}
-          </li>
-          <li>
-            <strong>Speech Rate:</strong> {solution.speech_rate ?? "N/A"}
-          </li>
-          <li>
-            <strong>Pronunciation Score:</strong> {solution.pron_score ?? "N/A"}
-          </li>
-          <li>
-            <strong>Comprehension Score:</strong>{" "}
-            {solution.compr_score ?? "N/A"}
-          </li>
-          <li>
-            <strong>Percent Attempt:</strong>{" "}
-            {solution.percent_attempt ? `${solution.percent_attempt}%` : "N/A"}
-          </li>
-        </ul>
-      </div> */}
     </>
   );
 };

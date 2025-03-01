@@ -15,6 +15,8 @@ import {
 import { Button } from "./ui/button";
 import { useUUID } from "@/app/context/UUIDContext";
 import LoadingComponent from "./LoadingComponent";
+import { RefreshCw } from "lucide-react";
+import SolutionDisplay from "@/components/SolutionDisplay";
 
 const HomeTable = () => {
   const [reports, seTreports] = useState([]);
@@ -226,6 +228,32 @@ const HomeTable = () => {
     );
   };
 
+    const formatDateTime = (isoString) => {
+      const date = new Date(isoString);
+
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are zero-based
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+      const seconds = String(date.getSeconds()).padStart(2, "0");
+
+      return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+    };
+
+      const addTime = (
+        isoString,
+        timeToAdd = { hours: 0, minutes: 0, seconds: 0 }
+      ) => {
+        const date = new Date(isoString);
+
+        date.setHours(date.getHours() + (timeToAdd.hours || 0));
+        date.setMinutes(date.getMinutes() + (timeToAdd.minutes || 0));
+        date.setSeconds(date.getSeconds() + (timeToAdd.seconds || 0));
+
+        return date.toISOString();
+      };
+
   return (
     <>
       {loading ? (
@@ -261,21 +289,34 @@ const HomeTable = () => {
                 <h1 className="text-2xl font-bold">Speech Assessment Report</h1>
 
                 <Dialog open={open} onOpenChange={setOpen}>
-                  <DialogTrigger>
-                    {uploading ? (
-                      <Button onClick={() => uploadToStudentTables()}>
-                        Submit Your Details
-                      </Button>
-                    ) : (
+                  {uploading ? (
+                    <Button onClick={() => uploadToStudentTables()}>
+                      Submit Your Details
+                    </Button>
+                  ) : (
+                    <div className="flex gap gap-2">
                       <Button
-                        onClick={() => {
-                          {setOpen(true)} setUploading(false);
-                        }}
+                        onClick={() => window.location.reload()}
+                        className=""
+                        variant="outline"
                       >
-                        Upload the details and Audio
+                        <RefreshCw /> Reload
                       </Button>
-                    )}
-                  </DialogTrigger>
+                      <DialogTrigger>
+                        <Button
+                          onClick={() => {
+                            {
+                              setOpen(true);
+                            }
+                            setUploading(false);
+                          }}
+                        >
+                          Upload the details and Audio
+                        </Button>
+                      </DialogTrigger>
+                    </div>
+                  )}
+
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Upload the Details</DialogTitle>
@@ -379,17 +420,17 @@ const HomeTable = () => {
                           </div>
                         </Td>
 
-                        <Td className="py-3 px-6 text-left">
+                        <Td className="py-3 px-6 text-center">
                           {report.reportURL && (
                             <div className="mt-4">
-                              <Button
-                                onClick={() => generateReport(report.reportURL)}
-                                // disabled={viewloading}
-                                className="bg-blue-500 text-white px-4 py-2 rounded mt-4 ml-4 disabled:opacity-50"
-                              >
-                                {" "}
-                                view report
-                              </Button>
+                              <p>
+                                <SolutionDisplay solution={report} />
+                              </p>
+                              {formatDateTime(
+                                addTime(report.apiCallTime, {
+                                  seconds: report.responseTime,
+                                })
+                              )}
                             </div>
                           )}
                         </Td>

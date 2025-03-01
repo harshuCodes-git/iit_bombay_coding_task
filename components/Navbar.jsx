@@ -39,7 +39,10 @@ const Navbar = () => {
             >
               Report History Filtered
             </Link>
-            <Link href="/contact" className={getLinkClass("/contact")}>
+            <Link
+              href="/report-page-model"
+              className={getLinkClass("/report-page-model")}
+            >
               Report Page/ Modal
             </Link>
           </div>
@@ -87,9 +90,9 @@ const Navbar = () => {
           </li>
           <li>
             <Link
-              href="/contact"
+              href="/report-page-model"
               className={`${getLinkClass(
-                "/contact"
+                "/report-page-model"
               )} block px-3 py-2 rounded-md text-base font-medium`}
             >
               Report Page/ Modal
