@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Table, Thead, Tbody, Tr, Th, Td } from "react-super-responsive-table";
 import "react-super-responsive-table/dist/SuperResponsiveTableStyle.css";
 import {
@@ -17,6 +18,7 @@ import { useUUID } from "@/app/context/UUIDContext";
 import LoadingComponent from "./LoadingComponent";
 import { RefreshCw } from "lucide-react";
 import SolutionDisplay from "@/components/SolutionDisplay";
+import BannerAmazon from "./BannerAmazon";
 
 const HomeTable = () => {
   const [reports, seTreports] = useState([]);
@@ -210,254 +212,191 @@ const HomeTable = () => {
       {loading ? (
         <LoadingComponent />
       ) : (
-        <div>
-          <div className="min-h-screen bg-gray-50 p-4">
-            <div className="max-w-7xl mx-auto p-4">
-              <header className="flex justify-between items-center mb-8">
-                <div className="flex items-center gap-4">
-                  <img src="/file.svg" alt="Logo" className="w-12 h-12" />
-                  <h1 className="text-2xl font-bold">
-                    Amazon School of Languages
-                  </h1>
-                </div>
-                <nav className="flex gap-8">
-                  <a
-                    href="#recordings"
-                    className="text-lg  underline font-medium hover:text-blue-600"
-                  >
-                    Recordings
-                  </a>
-                  <a
-                    href="#reports"
-                    className="text-lg font-medium hover:text-blue-600"
-                  >
-                    Reports
-                  </a>
-                </nav>
-              </header>
-              {/* Uploading data  */}
-              <div className="p-4 flex justify-between items-center">
-                <h1 className="text-2xl font-bold">Speech Assessment Report</h1>
+        <div className="min-h-screen bg-gray-50 p-4">
+          <div className="max-w-7xl mx-auto p-4">
+            <BannerAmazon/>
 
-                <Dialog open={open} onOpenChange={setOpen}>
-                  {uploading ? (
-                    <Button onClick={() => uploadToStudentTables()}>
-                      Submit Your Details
+            {/* Uploading data */}
+            <div className="p-4 flex flex-wrap justify-between items-center">
+              <h1 className="text-2xl font-bold">Speech Assessment Report</h1>
+
+              <Dialog open={open} onOpenChange={setOpen}>
+                {uploading ? (
+                  <Button onClick={uploadToStudentTables}>
+                    Submit Your Details
+                  </Button>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      onClick={() => window.location.reload()}
+                      variant="outline"
+                    >
+                      <RefreshCw className="mr-1" /> Reload
                     </Button>
-                  ) : (
-                    <div className="flex gap gap-2">
+                    <DialogTrigger>
                       <Button
-                        onClick={() => window.location.reload()}
-                        className=""
-                        variant="outline"
+                        onClick={() => {
+                          setOpen(true);
+                          setUploading(false);
+                        }}
                       >
-                        <RefreshCw /> Reload
+                        Upload Details & Audio
                       </Button>
-                      <DialogTrigger>
-                        <Button
-                          onClick={() => {
-                            {
-                              setOpen(true);
-                            }
-                            setUploading(false);
-                          }}
+                    </DialogTrigger>
+                  </div>
+                )}
+
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Upload the Details</DialogTitle>
+                    <DialogDescription>
+                      <div className="mt-4">
+                        <input
+                          type="text"
+                          placeholder="Your Name"
+                          value={userName}
+                          onChange={(e) => setUserName(e.target.value)}
+                          className="border p-2 rounded mb-2 w-full"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Story Name"
+                          value={storyName}
+                          onChange={(e) => setStoryName(e.target.value)}
+                          className="border p-2 rounded mb-2 w-full"
+                        />
+                      </div>
+
+                      <div className="mt-4">
+                        <input
+                          type="file"
+                          accept="audio/*"
+                          onChange={handleFileChange}
+                        />
+                        <button
+                          onClick={uploadToS3}
+                          disabled={loading}
+                          className="bg-blue-500 text-white px-4 py-2 rounded ml-2 disabled:opacity-50"
                         >
-                          Upload the details and Audio
-                        </Button>
-                      </DialogTrigger>
-                    </div>
-                  )}
+                          {loading ? "Uploading..." : "Upload Audio File"}
+                        </button>
+                      </div>
+                    </DialogDescription>
+                  </DialogHeader>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Upload the Details</DialogTitle>
-                      <DialogDescription>
-                        {/* User Inputs */}
-                        <div className="mt-4">
-                          <input
-                            type="text"
-                            placeholder="Your Name"
-                            value={userName}
-                            onChange={(e) => setUserName(e.target.value)}
-                            className="border p-2 rounded mb-2 w-full"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Story Name"
-                            value={storyName}
-                            onChange={(e) => setStoryName(e.target.value)}
-                            className="border p-2 rounded mb-2 w-full"
-                          />
-                        </div>
-
-                        {/* File Upload Section */}
-                        <div className="mt-4">
-                          <input
-                            type="file"
-                            accept="audio/*"
-                            onChange={handleFileChange}
-                          />
-                          <button
-                            onClick={uploadToS3}
-                            disabled={loading}
-                            className="bg-blue-500 text-white px-4 py-2 rounded ml-2 disabled:opacity-50"
+            {/* Table Section */}
+            <div className="overflow-x-auto border rounded-xl">
+              <Table className="min-w-full bg-white border border-black rounded-2xl shadow-lg">
+                <Thead className="bg-purple-500 text-white border border-black font-semibold text-lg">
+                  <Tr>
+                    <Th className="py-3 px-4 text-center border border-black">
+                      Student Name
+                    </Th>
+                    <Th className="py-3 px-4 text-center border border-black">
+                      Story Read
+                    </Th>
+                    <Th className="py-3 px-4 text-center border border-black">
+                      Audio File
+                    </Th>
+                    <Th className="py-3 px-4 text-center border border-black">
+                      Report
+                    </Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {reports.map((report, index) => (
+                    <Tr
+                      key={index}
+                      className="border-b border-gray-200 hover:bg-gray-100"
+                    >
+                      <Td className="py-3 px-4 lg:text-center border border-black">
+                        {report.StudentName}
+                      </Td>
+                      <Td className="py-3 px-4 lg:text-center border border-black">
+                        {report.Story}
+                      </Td>
+                      <Td className="py-3 px-4 lg:text-center border border-black">
+                        {!audioUploadedRows[index] ? (
+                          <div>
+                            <p>Audio Uploaded</p>
+                            <Button onClick={() => handleAudioUploadRow(index)}>
+                              Upload New
+                            </Button>
+                          </div>
+                        ) : (
+                          <Dialog
+                            open={openRows[index] || false}
+                            onOpenChange={() => toggleDialog(index)}
                           >
-                            {loading ? "Uploading..." : "Upload Audio File"}
-                          </button>
-                        </div>
-                      </DialogDescription>
-                    </DialogHeader>
-                  </DialogContent>
-                </Dialog>
-              </div>
+                            <DialogTrigger>
+                              <Button>Upload New</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Upload the Details</DialogTitle>
+                                <DialogDescription>
+                                  <div className="mt-4">
+                                    <input
+                                      type="text"
+                                      placeholder="Your Name"
+                                      value={userName}
+                                      onChange={(e) =>
+                                        setUserName(e.target.value)
+                                      }
+                                      className="border p-2 rounded mb-2 w-full"
+                                    />
+                                    <input
+                                      type="text"
+                                      placeholder="Story Name"
+                                      value={storyName}
+                                      onChange={(e) =>
+                                        setStoryName(e.target.value)
+                                      }
+                                      className="border p-2 rounded mb-2 w-full"
+                                    />
+                                  </div>
 
-              <div className="overflow-x-auto">
-                <Table className="min-w-full  bg-white rounded-xl shadow-lg overflow-hidden">
-                  <Thead className="bg-purple-500 border border-gray-800 text-white font-semibold text-lg">
-                    <Tr>
-                      <Th className="py-4 px-6 text-center border border-gray-800">
-                        Student Name
-                      </Th>
-                      <Th className="py-4 px-6 text-center border border-gray-800">
-                        Story Read
-                      </Th>
-                      <Th className="py-4 px-6 text-center border border-gray-800">
-                        Audio File
-                      </Th>
-                      <Th className="py-4 px-6 text-center border border-gray-800">
-                        Report
-                      </Th>
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    {reports.map((report, index) => (
-                      <Tr
-                        key={index}
-                        className="border border-gray-600 hover:bg-gray-100 cursor-pointer"
-                      >
-                        <Td className="py-3 px-6 text-left border border-gray-600">
-                          {report.StudentName}
-                        </Td>
-                        <Td className="py-3 px-6 text-left border border-gray-600 ">
-                          {report.Story}
-                        </Td>
-                        <Td className="py-3 px-4 text-left border border-gray-600">
-                          <div className="flex w-30 items-center justify-center align-center">
-                            {!audioUploadedRows[index] ? (
-                              <div>
-                                <p>Audio Uploaded</p>
-                                <Button
-                                  onClick={() => handleAudioUploadRow(index)}
-                                  variant="download"
-                                >
-                                  Upload New
-                                </Button>
-                              </div>
-                            ) : (
-                              <p>
-                                <div>
-                                  <p>Upload now</p>
-                                  <Dialog
-                                    open={openRows[index] || false}
-                                    onOpenChange={() => toggleDialog(index)}
-                                  >
-                                    {uploading ? (
-                                      <Button
-                                        onClick={() => uploadToStudentTables()}
-                                      >
-                                        Submit Your Details
-                                      </Button>
-                                    ) : (
-                                      <div className="flex gap gap-2">
-                                        <DialogTrigger>
-                                          <Button
-                                            onClick={() => {
-                                              {
-                                                setOpen(true);
-                                              }
-                                              setUploading(false);
-                                            }}
-                                          >
-                                            Upload New
-                                          </Button>
-                                        </DialogTrigger>
-                                      </div>
-                                    )}
-
-                                    <DialogContent>
-                                      <DialogHeader>
-                                        <DialogTitle>
-                                          Upload the Details
-                                        </DialogTitle>
-                                        <DialogDescription>
-                                          {/* User Inputs */}
-                                          <div className="mt-4">
-                                            <input
-                                              type="text"
-                                              placeholder="Your Name"
-                                              value={userName}
-                                              onChange={(e) =>
-                                                setUserName(e.target.value)
-                                              }
-                                              className="border p-2 rounded mb-2 w-full"
-                                            />
-                                            <input
-                                              type="text"
-                                              placeholder="Story Name"
-                                              value={storyName}
-                                              onChange={(e) =>
-                                                setStoryName(e.target.value)
-                                              }
-                                              className="border p-2 rounded mb-2 w-full"
-                                            />
-                                          </div>
-
-                                          {/* File Upload Section */}
-                                          <div className="mt-4">
-                                            <input
-                                              type="file"
-                                              accept="audio/*"
-                                              onChange={handleFileChange}
-                                            />
-                                            <button
-                                              onClick={uploadToS3}
-                                              disabled={loading}
-                                              className="bg-blue-500 text-white px-4 py-2 rounded ml-2 disabled:opacity-50"
-                                            >
-                                              {loading
-                                                ? "Uploading..."
-                                                : "Upload Audio File"}
-                                            </button>
-                                          </div>
-                                        </DialogDescription>
-                                      </DialogHeader>
-                                    </DialogContent>
-                                  </Dialog>
-                                </div>
-                              </p>
+                                  <div className="mt-4">
+                                    <input
+                                      type="file"
+                                      accept="audio/*"
+                                      onChange={handleFileChange}
+                                    />
+                                    <button
+                                      onClick={uploadToS3}
+                                      disabled={loading}
+                                      className="bg-blue-500 text-white px-4 py-2 rounded ml-2 disabled:opacity-50"
+                                    >
+                                      {loading
+                                        ? "Uploading..."
+                                        : "Upload Audio File"}
+                                    </button>
+                                  </div>
+                                </DialogDescription>
+                              </DialogHeader>
+                            </DialogContent>
+                          </Dialog>
+                        )}
+                      </Td>
+                      <Td className="py-3 px-4 text-center border border-black">
+                        {report.reportURL && (
+                          <div className="">
+                            <SolutionDisplay solution={report} />
+                            {formatDateTime(
+                              addTime(report.apiCallTime, {
+                                seconds: report.responseTime,
+                              })
                             )}
                           </div>
-                        </Td>
-
-                        <Td className="py-3 px-6 text-center">
-                          {report.reportURL && (
-                            <div className="mt-4">
-                              <p>
-                                <SolutionDisplay solution={report} />
-                              </p>
-                              {formatDateTime(
-                                addTime(report.apiCallTime, {
-                                  seconds: report.responseTime,
-                                })
-                              )}
-                            </div>
-                          )}
-                        </Td>
-                      </Tr>
-                    ))}
-                  </Tbody>
-                </Table>
-              </div>
+                        )}
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
             </div>
           </div>
         </div>

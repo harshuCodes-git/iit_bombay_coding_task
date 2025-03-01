@@ -21,7 +21,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0 text-2xl font-bold">
-            <Link href="/">Main</Link>
+            <Link href="/">Digital Audio Processing Task</Link>
           </div>
           <div className="hidden md:flex space-x-6">
             <Link href="/" className={getLinkClass("/")}>

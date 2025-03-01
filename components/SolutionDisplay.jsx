@@ -2,8 +2,7 @@
 import React, { useState, useRef } from "react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-import watermarkImage from "../public/waterMarkLogo.png"; // Import the watermark image
-
+import watermarkImage from "../public/waterMarkLogo.png"; 
 import {
   Dialog,
   DialogTrigger,
@@ -17,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import ReadingReport from "@/components/ReadingReport";
 import DetailReport from "./DetailReport";
+import { TbReportSearch } from "react-icons/tb";
 
 const SolutionDisplay = ({ solution }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -120,43 +120,57 @@ const downloadPDF = async () => {
 
 
   return (
-    <>
-      <p
-        onClick={handleDialogToggle}
-        className="text-blue-700 cursor-pointer underline"
-      >
-        View Report
-      </p>
-      <div className="max-w-full">
-        <Dialog open={isOpen} onOpenChange={setIsOpen} className="max-w-full">
-          <DialogContent className="max-w-full sm:max-w-3xl lg:max-w-6xl w-full overflow-auto max-h-[90vh]">
-            <DialogHeader>
-              <DialogTitle>Reports of {solution.StudentName}</DialogTitle>
-              <DialogDescription>Details of the report</DialogDescription>
-            </DialogHeader>
+<>
+  {/* View Report Button */}
+  <Button
+    onClick={handleDialogToggle}
+    className=""
+    variant="viewreport"
+  >
+    <TbReportSearch size={24} /> View Report
+  </Button>
 
-            {/* Report Section (Capturing Full Content for PDF) */}
-            <div ref={reportRef} className="p-4  space-y-6">
-              <ReadingReport solution={solution} />
-              <DetailReport solution={reportSolution} />
-            </div>
+  {/* Dialog Box */}
+  <div className="w-full">
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl overflow-auto max-h-[90vh] p-4">
+        
+        {/* Dialog Header */}
+        <DialogHeader className="text-center">
+          <DialogTitle className="text-lg md:text-xl font-semibold">
+            Reports of {solution.StudentName}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-gray-600">
+            Detailed analysis of the student's report
+          </DialogDescription>
+        </DialogHeader>
 
-            {/* Buttons: PDF Download & Close */}
-            <div className="flex justify-between mt-4">
-              <Button
-                onClick={downloadPDF}
-                className="bg-blue-500 hover:bg-blue-600"
-              >
-                Download PDF
-              </Button>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </>
+        {/* Report Section (Capturing Full Content for PDF) */}
+        <div ref={reportRef} className="p-4 space-y-6 overflow-auto">
+          <ReadingReport solution={solution} />
+          <DetailReport solution={reportSolution} />
+        </div>
+
+        {/* Buttons Section */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-between mt-4">
+          <Button
+            onClick={downloadPDF}
+            className="bg-blue-500 hover:bg-blue-600 w-full sm:w-auto px-6 py-2"
+          >
+            Download PDF
+          </Button>
+          <DialogClose asChild>
+            <Button variant="outline" className="w-full sm:w-auto px-6 py-2">
+              Cancel
+            </Button>
+          </DialogClose>
+        </div>
+
+      </DialogContent>
+    </Dialog>
+  </div>
+</>
+
   );
 };
 
