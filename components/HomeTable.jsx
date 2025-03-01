@@ -77,7 +77,7 @@ const HomeTable = () => {
     }
   };
 
-  //ulpoad to student report tabke in dynamodb
+  //upload to student report table in dynamodb
   const uploadToStudentTables = async () => {
     if (!fileUrl) {
       alert("No uploaded file URL found!");

@@ -1,6 +1,6 @@
 import React from "react";
 
-const ReadingReport = ({ solution}) => {
+const ReadingReport = ({ solution}) => {  
   if (!solution) return null;
 
   
