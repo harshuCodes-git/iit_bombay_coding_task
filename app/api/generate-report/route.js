@@ -24,7 +24,7 @@ export async function POST(req) {
 
     const apiUrl =
       "https://505a4vjhyk.execute-api.ap-south-1.amazonaws.com/prod/scoring";
-    const apiKey = "kShgdgVh8maiuB7chnBfO6uI17ylFJJT8RpI5Zwg";
+    const apiKey = process.env.NEXT_PUBLIC_PROVIDED_API_KEY;
 
     const response = await axios.post(
       apiUrl,
