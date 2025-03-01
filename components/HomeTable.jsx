@@ -35,6 +35,7 @@ const HomeTable = () => {
   const [audioUploaded, setAudioUploaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { uuid } = useUUID();
+  const [openRows, setOpenRows] = useState({});
 
   console.log(uuid);
 
@@ -142,33 +143,6 @@ const HomeTable = () => {
     }
   };
 
-  // Function to display decoded text with color coding
-  const renderDecodedText = (decodedText, wordScores) => {
-    const scoreMap = {};
-    wordScores.forEach(([word, score]) => {
-      scoreMap[word.toLowerCase()] = score;
-    });
-
-    const words = decodedText.split(" ");
-    return words.map((word, index) => {
-      const score = scoreMap[word.toLowerCase()] || 0;
-      let className = "";
-
-      if (score === 1) {
-        className = "text-green-600";
-      } else if (score >= 0.6) {
-        className = "text-orange-500";
-      } else {
-        className = "text-red-600 line-through";
-      }
-
-      return (
-        <span key={index} className={`${className} mx-1`}>
-          {word}
-        </span>
-      );
-    });
-  };
   useEffect(() => {
     const fetchReports = async () => {
       try {
@@ -182,51 +156,6 @@ const HomeTable = () => {
     };
     fetchReports();
   }, []);
-  const clickOnURL = (id) => {
-    router.push(`/report/${id}`);
-  };
-
-  // checking audio file is working or not
-
-  const generateReport = async (reportfileUrl) => {
-    if (!reportfileUrl) {
-      alert("No uploaded file URL found!");
-      return;
-    }
-
-    setViewLoading(true);
-    try {
-      const response = await axios.post("/api/generate-report", {
-        s3_url: reportfileUrl,
-      });
-      setSolution(response.data);
-      alert("Report generated successfully!");
-
-      // Scroll to the section with id "generated-report"
-      document
-        .getElementById("generated-report")
-        .scrollIntoView({ behavior: "smooth" });
-    } catch (error) {
-      console.error("Report generation failed:", error);
-      alert("Report generation failed!");
-    } finally {
-      setViewLoading(false);
-    }
-  };
-
-  const renderAudioOrPlaceholder = (audioFile) => {
-    if (!audioFile) {
-      return <div>Not uploaded</div>;
-    }
-    return (
-      <div className="flex w-30">
-        <audio controls>
-          <source src={audioFile} type="audio/mpeg" />
-          Your browser does not support the audio element.
-        </audio>
-      </div>
-    );
-  };
 
     const formatDateTime = (isoString) => {
       const date = new Date(isoString);
@@ -253,6 +182,28 @@ const HomeTable = () => {
 
         return date.toISOString();
       };
+
+
+
+        
+
+  const [audioUploadedRows, setAudioUploadedRows] = useState({});
+
+  // Toggle the dialog for a specific row
+  const toggleDialog = (index) => {
+    setOpenRows((prev) => ({
+      ...prev,
+      [index]: !prev[index], // Toggle only for the clicked row
+    }));
+  };
+
+  // Toggle audioUploaded for a specific row
+  const handleAudioUploadRow = (index) => {
+    setAudioUploadedRows((prev) => ({
+      ...prev,
+      [index]: !prev[index], // Toggle only for the clicked row
+    }));
+  };
 
   return (
     <>
@@ -391,29 +342,97 @@ const HomeTable = () => {
                           {report.Story}
                         </Td>
                         <Td className="py-3 px-4 text-left border border-gray-600">
-                          {/* {renderAudioOrPlaceholder(report.audioFile)} */}
                           <div className="flex w-30 items-center justify-center align-center">
-                            {!audioUploaded ? (
+                            {!audioUploadedRows[index] ? (
                               <div>
                                 <p>Audio Uploaded</p>
                                 <Button
-                                  onClick={handleAudioUpload}
-                                  variant="outline"
+                                  onClick={() => handleAudioUploadRow(index)}
+                                  variant="download"
                                 >
-                                  Upload Again
+                                  Upload New
                                 </Button>
                               </div>
                             ) : (
                               <p>
-                                {" "}
                                 <div>
                                   <p>Upload now</p>
-                                  <Button
-                                    onClick={() => uploadToStudentTables()}
-                                    variant="outline"
+                                  <Dialog
+                                    open={openRows[index] || false}
+                                    onOpenChange={() => toggleDialog(index)}
                                   >
-                                    Upload New
-                                  </Button>
+                                    {uploading ? (
+                                      <Button
+                                        onClick={() => uploadToStudentTables()}
+                                      >
+                                        Submit Your Details
+                                      </Button>
+                                    ) : (
+                                      <div className="flex gap gap-2">
+                                        <DialogTrigger>
+                                          <Button
+                                            onClick={() => {
+                                              {
+                                                setOpen(true);
+                                              }
+                                              setUploading(false);
+                                            }}
+                                          >
+                                            Upload New
+                                          </Button>
+                                        </DialogTrigger>
+                                      </div>
+                                    )}
+
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>
+                                          Upload the Details
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                          {/* User Inputs */}
+                                          <div className="mt-4">
+                                            <input
+                                              type="text"
+                                              placeholder="Your Name"
+                                              value={userName}
+                                              onChange={(e) =>
+                                                setUserName(e.target.value)
+                                              }
+                                              className="border p-2 rounded mb-2 w-full"
+                                            />
+                                            <input
+                                              type="text"
+                                              placeholder="Story Name"
+                                              value={storyName}
+                                              onChange={(e) =>
+                                                setStoryName(e.target.value)
+                                              }
+                                              className="border p-2 rounded mb-2 w-full"
+                                            />
+                                          </div>
+
+                                          {/* File Upload Section */}
+                                          <div className="mt-4">
+                                            <input
+                                              type="file"
+                                              accept="audio/*"
+                                              onChange={handleFileChange}
+                                            />
+                                            <button
+                                              onClick={uploadToS3}
+                                              disabled={loading}
+                                              className="bg-blue-500 text-white px-4 py-2 rounded ml-2 disabled:opacity-50"
+                                            >
+                                              {loading
+                                                ? "Uploading..."
+                                                : "Upload Audio File"}
+                                            </button>
+                                          </div>
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                    </DialogContent>
+                                  </Dialog>
                                 </div>
                               </p>
                             )}
@@ -438,41 +457,6 @@ const HomeTable = () => {
                     ))}
                   </Tbody>
                 </Table>
-              </div>
-              <div id="generated-report" className="mt-8">
-                {solution && (
-                  <div>
-                    <h2>Reading Report</h2>
-                    <p>
-                      <strong>Decoded Text:</strong> {solution.decoded_text}
-                    </p>
-                    <p>
-                      <strong>Words Correct Per Minute (WCPM):</strong>{" "}
-                      {solution.wcpm}
-                    </p>
-                    <p>
-                      <strong>Pronunciation Score:</strong>{" "}
-                      {solution.pron_score}
-                    </p>
-                    <p>
-                      <strong>Speech Rate:</strong> {solution.speech_rate}
-                    </p>
-                    <p>
-                      <strong>Correct Words:</strong> {solution.no_corr}
-                    </p>
-                    <p>
-                      <strong>Miscues:</strong> {solution.no_miscue}
-                    </p>
-                    <p>
-                      <strong>Percent Attempted:</strong>{" "}
-                      {solution.percent_attempt}%
-                    </p>
-                    {renderDecodedText(
-                      solution.decoded_text,
-                      solution.word_scores
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </div>

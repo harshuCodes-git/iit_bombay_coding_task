@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import ReadingReport from "@/components/ReadingReport";
 import DetailReport from "./DetailReport";
-import DownloadReport from "./DownloadReport";
+import GeneratePDF from "./GeneratePDF";
 
 const DownloadPDF = ({ solution }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -130,13 +130,8 @@ const DownloadPDF = ({ solution }) => {
         >
           <TbReportSearch width={30} height={30} /> View Report
         </Button>
-        <Button
-          onClick={downloadPDF}
-          className=" cursor-pointer underline"
-          variant="download"
-        >
-          <FileDown /> Download PDF
-        </Button>
+
+        <GeneratePDF solution={solution} />
       </div>
       <div className="max-w-full">
         <Dialog open={isOpen} onOpenChange={setIsOpen} className="max-w-full">

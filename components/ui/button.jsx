@@ -20,6 +20,8 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         download:
           "bg-zinc-200 text-black hover:text-primary-foreground hover:bg-primary/90 border border-gray-600",
+        viewreport:
+          "border border-input bg-background hover:bg-accent hover:border-black hover:text-accent-foreground",
       },
       size: {
         default: "h-10 px-4 py-2",

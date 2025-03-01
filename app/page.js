@@ -10,7 +10,6 @@ export default function Home() {
     <div className=" flex flex-col  ">
       <Navbar />
       <HeroSection/>
-      <HomeTable />
     </div>
   );
 }
