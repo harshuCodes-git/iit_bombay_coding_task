@@ -24,15 +24,12 @@ const DownloadPDF = ({ solution }) => {
   const [isOpen, setIsOpen] = useState(false);
   const reportRef = useRef(null); // Reference for capturing report
 
-  function cleanAndParseJson(jsonString) {
-    try {
-      const cleanedString = jsonString.replace(/\\/g, "");
-      return JSON.parse(cleanedString);
-    } catch (error) {
-      console.error("Error decoding JSON:", error);
-      return {};
+  const cleanAndParseJson = (jsonData) => {
+    if (typeof jsonData !== "string") {
+      jsonData = JSON.stringify(jsonData); // Convert object to string if needed
     }
-  }
+    return JSON.parse(jsonData.replace(/\n/g, ""));
+  };
 
   const reportSolution = solution?.mainReport
     ? cleanAndParseJson(solution.mainReport)
@@ -126,7 +123,7 @@ const DownloadPDF = ({ solution }) => {
         <Button
           onClick={handleDialogToggle}
           className=" cursor-pointer underline"
-          variant="outline"
+          variant="viewreport"
         >
           <TbReportSearch width={30} height={30} /> View Report
         </Button>

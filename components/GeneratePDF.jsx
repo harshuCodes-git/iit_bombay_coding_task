@@ -20,15 +20,12 @@ const GeneratePDF = ({ solution }) => {
   const [isOpen, setIsOpen] = useState(false);
   const reportRef = useRef(null);
 
-  function cleanAndParseJson(jsonString) {
-    try {
-      const cleanedString = jsonString.replace(/\\/g, "");
-      return JSON.parse(cleanedString);
-    } catch (error) {
-      console.error("Error decoding JSON:", error);
-      return {};
+  const cleanAndParseJson = (jsonData) => {
+    if (typeof jsonData !== "string") {
+      jsonData = JSON.stringify(jsonData); // Convert object to string if needed
     }
-  }
+    return JSON.parse(jsonData.replace(/\n/g, ""));
+  };
 
   const reportSolution = solution?.mainReport
     ? cleanAndParseJson(solution.mainReport)
@@ -89,7 +86,7 @@ const GeneratePDF = ({ solution }) => {
           className="cursor-pointer underline"
           variant="download"
         >
-          <FileDown />  Download PDF
+          <FileDown /> Download PDF
         </Button>
       </div>
       <div className="max-w-full">

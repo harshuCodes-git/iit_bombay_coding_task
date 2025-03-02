@@ -43,9 +43,7 @@ const HomeTable = () => {
 
   const [open, setOpen] = useState(false);
 
-  const handleAudioUpload = () => {
-    setAudioUploaded(true);
-  };
+
 
   // Select audio file
   const handleFileChange = (e) => {
@@ -78,72 +76,84 @@ const HomeTable = () => {
   };
 
   //upload to student report table in dynamodb
-  const uploadToStudentTables = async () => {
-    if (!fileUrl) {
-      alert("No uploaded file URL found!");
+const uploadToStudentTables = async () => {
+  if (!fileUrl) {
+    alert("No uploaded file URL found!");
+    return;
+  }
+
+  if (!userName || !storyName) {
+    alert("Please provide your name and the story name!");
+    return;
+  }
+
+  setLoading(true);
+  const callTime = new Date();
+  setStartTime(callTime);
+
+  try {
+    const startTime = performance.now();
+    const reportJSONString = await generateReportSASAPI(fileUrl);
+    const endTime = performance.now();
+    const duration = Math.round((endTime - startTime) / 1000);
+    setTimeTaken(duration);
+
+    // Parse JSON string to object
+    let reportJSON;
+    try {
+      reportJSON = JSON.parse(reportJSONString);
+    } catch (parseError) {
+      console.error("Invalid JSON response:", parseError);
+      alert("Invalid response format from API");
       return;
     }
 
-    if (!userName || !storyName) {
-      alert("Please provide your name and the story name!");
+    // Check if API returned an error
+    if (!reportJSON || reportJSON.errorMessage) {
+      alert(" Please Upload Valid URL to Get the Report");
       return;
     }
 
-    setLoading(true);
-    const callTime = new Date(); // Record start time here
-    setStartTime(callTime);
+    await axios.post("/api/studentlog/save", {
+      id: uuid,
+      StudentName: userName,
+      Story: storyName,
+      audioFile: fileUrl,
+      apiCallTime: callTime.toISOString(),
+      responseTime: duration,
+      reportURL: fileUrl,
+      mainReport: reportJSONString, // Store as string in DB
+    });
 
-    try {
-      // Start timing before generating the report
-      const startTime = performance.now();
-      const reportJSON = await generateReportSASAPI(fileUrl);
-      const endTime = performance.now();
+    alert("Report generated and saved successfully!");
+  } catch (error) {
+    console.error("Report generation failed:", error);
+    alert(error.message || "Report generation failed!");
+  } finally {
+    setLoading(false);
+    setUploading(false);
+  }
+};
 
-      // Calculate duration in seconds
-      const duration = Math.round((endTime - startTime) / 1000);
-      setTimeTaken(duration);
 
-      // Ensure callTime is not null before using toISOString()
-      await axios.post("/api/studentlog/save", {
-        ...response.data,
-        id: uuid,
-        StudentName: userName,
-        Story: storyName,
-        audioFile: fileUrl,
-        apiCallTime: callTime.toISOString(), // Use toISOString() for consistent date format
-        responseTime: duration, // Pass as a number (in seconds)
-        reportURL: fileUrl,
-        mainReport: reportJSON,
-      });
+const generateReportSASAPI = async (reportURL) => {
+  try {
+    const response = await axios.post("/api/generate-report", {
+      s3_url: reportURL,
+    });
 
-      alert("Report generated and saved successfully!");
-    } catch (error) {
-      console.error("Report generation failed:", error);
-      alert("Report generation failed!");
-    } finally {
-      setLoading(false);
-      setUploading(false);
-    }
-  };
-
-  // Generate Report from SAS API
-  const generateReportSASAPI = async (reportURL) => {
-    try {
-      const response = await axios.post("/api/generate-report", {
-        s3_url: reportURL,
-      });
-      const jsonString = JSON.stringify(response.data);
-      setResponse(jsonString);
-      setReport(jsonString);
-      return jsonString; // Return the JSON as a string
-    } catch (error) {
-      console.error("Report generation failed:", error);
-      alert("Report generation failed!");
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
+    const jsonString = JSON.stringify(response.data); // Ensure it's a string
+    setResponse(jsonString);
+    setReport(jsonString);
+    return jsonString; // Return as a string
+  } catch (error) {
+    console.error("Report generation failed:", error);
+    alert("Report generation failed!");
+    return JSON.stringify({ errorMessage: "Report generation failed" }); // Return error as a string
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -214,7 +224,7 @@ const HomeTable = () => {
       ) : (
         <div className="min-h-screen bg-gray-50 p-4">
           <div className="max-w-7xl mx-auto p-4">
-            <BannerAmazon/>
+            <BannerAmazon />
 
             {/* Uploading data */}
             <div className="p-4 flex flex-wrap justify-between items-center">
@@ -239,7 +249,20 @@ const HomeTable = () => {
                           setOpen(true);
                           setUploading(false);
                         }}
+                        variant="uploadbtn"
                       >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          class="w-4 h-4 mr-1.5"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M10.5 3.75a6 6 0 0 0-5.98 6.496A5.25 5.25 0 0 0 6.75 20.25H18a4.5 4.5 0 0 0 2.206-8.423 3.75 3.75 0 0 0-4.133-4.303A6.001 6.001 0 0 0 10.5 3.75Zm2.03 5.47a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l1.72-1.72v4.94a.75.75 0 0 0 1.5 0v-4.94l1.72 1.72a.75.75 0 1 0 1.06-1.06l-3-3Z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
                         Upload Details & Audio
                       </Button>
                     </DialogTrigger>
@@ -320,9 +343,24 @@ const HomeTable = () => {
                       </Td>
                       <Td className="py-3 px-4 lg:text-center border border-black">
                         {!audioUploadedRows[index] ? (
-                          <div>
+                          <div className="flex items-center justify-center flex-col">
                             <p>Audio Uploaded</p>
-                            <Button onClick={() => handleAudioUploadRow(index)}>
+                            <Button
+                              onClick={() => handleAudioUploadRow(index)}
+                              
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                class="w-4 h-4 mr-1.5"
+                              >
+                                <path
+                                  fill-rule="evenodd"
+                                  d="M10.5 3.75a6 6 0 0 0-5.98 6.496A5.25 5.25 0 0 0 6.75 20.25H18a4.5 4.5 0 0 0 2.206-8.423 3.75 3.75 0 0 0-4.133-4.303A6.001 6.001 0 0 0 10.5 3.75Zm2.03 5.47a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l1.72-1.72v4.94a.75.75 0 0 0 1.5 0v-4.94l1.72 1.72a.75.75 0 1 0 1.06-1.06l-3-3Z"
+                                  clip-rule="evenodd"
+                                />
+                              </svg>
                               Upload New
                             </Button>
                           </div>
@@ -332,7 +370,21 @@ const HomeTable = () => {
                             onOpenChange={() => toggleDialog(index)}
                           >
                             <DialogTrigger>
-                              <Button>Upload New</Button>
+                              <Button >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                  class="w-4 h-4 mr-1.5"
+                                >
+                                  <path
+                                    fill-rule="evenodd"
+                                    d="M10.5 3.75a6 6 0 0 0-5.98 6.496A5.25 5.25 0 0 0 6.75 20.25H18a4.5 4.5 0 0 0 2.206-8.423 3.75 3.75 0 0 0-4.133-4.303A6.001 6.001 0 0 0 10.5 3.75Zm2.03 5.47a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l1.72-1.72v4.94a.75.75 0 0 0 1.5 0v-4.94l1.72 1.72a.75.75 0 1 0 1.06-1.06l-3-3Z"
+                                    clip-rule="evenodd"
+                                  />
+                                </svg>
+                                Upload New
+                              </Button>
                             </DialogTrigger>
                             <DialogContent>
                               <DialogHeader>
